@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BrownReStock – Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101010;color:#eee;font-family:Arial,sans-serif}
+header{padding:22px;text-align:center;border-bottom:1px solid #9c7b35}
+header h1{margin:0;color:#d6b45b;letter-spacing:2px}
+header p{color:#aaa;font-size:12px}
+main{max-width:1050px;margin:25px auto;padding:15px}
+.panel{background:#1c1c1c;border:1px solid #39322a;border-radius:12px;padding:20px;margin-bottom:20px}
+h2{color:#d6b45b;margin-top:0}
+input,textarea,select{width:100%;padding:11px;margin:6px 0 13px;background:#111;color:white;border:1px solid #555;border-radius:6px}
+textarea{min-height:85px;resize:vertical}
+button{background:#b89442;color:#111;border:0;padding:12px 18px;border-radius:6px;font-weight:bold;cursor:pointer}
+button:hover{background:#e0c16c}
+button.secondary{background:#444;color:white}
+.case{background:#202020;border:1px solid #51432a;border-radius:10px;padding:18px;margin:15px 0}
+.case h3{color:#d6b45b}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.photo{max-width:180px;max-height:150px;object-fit:contain;display:block;margin:10px 0}
+.total{font-size:19px;color:#e1c36c;font-weight:bold;margin:8px 0 15px}
+#app,#login{display:none}
+#message{margin:15px 0;color:#e1c36c}
+@media(max-width:600px){.grid{grid-template-columns:1fr}main{padding:10px}}
+</style>
+</head>
+<body>
+<header>
+<h1>BrownReStock</h1>
+<p>SMART STOCK. SECOND LIFE. · ADMIN PANEL</p>
+</header>
+
+<main>
+<section id="login" class="panel">
+<h2>Accesso amministratore</h2>
+<label>Email</label>
+<input id="email" type="email" placeholder="info@brownrestock.de">
+<label>Password</label>
+<input id="password" type="password" placeholder="La tua password">
+<button onclick="login()">Accedi</button>
+<div id="loginMessage"></div>
+</section>
+
+<section id="app">
+<div class="panel">
+<h2>Gestione casse</h2>
+<p>Modifica prezzi, descrizioni, fotografie e disponibilità.</p>
+<button class="secondary" onclick="logout()">Esci</button>
+<div id="message"></div>
+</div>
+<div id="cases"></div>
+</section>
+</main>
+
+<script>
+const SUPABASE_URL = "https://szxojmygsqxjqeyqjgre.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ytwy5iHgA4_LQkwD5mSTWA_-lS8dtU0";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function showMessage(message){
+document.getElementById("message").textContent=message;
+}
+
+async function login(){
+const email=document.getElementById("email").value.trim();
+const password=document.getElementById("password").value;
+const result=await db.auth.signInWithPassword({email,password});
+if(result.error){
+document.getElementById("loginMessage").textContent="Accesso non riuscito: "+result.error.message;
+return;
+}
+document.getElementById("loginMessage").textContent="";
+await checkSession();
+}
+
+async function logout(){
+await db.auth.signOut();
+document.getElementById("app").style.display="none";
+document.getElementById("login").style.display="block";
+}
+
+async function checkSession(){
+const {data}=await db.auth.getSession();
+if(data.session){
+document.getElementById("login").style.display="none";
+document.getElementById("app").style.display="block";
+await loadCases();
+}else{
+document.getElementById("app").style.display="none";
+document.getElementById("login").style.display="block";
+}
+}
+
+function safe(value){
+return String(value??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+}
+
+async function loadCases(){
+showMessage("Caricamento casse...");
+const {data,error}=await db.from("casse").select("*").order("numero");
+if(error){showMessage("Errore: "+error.message);return;}
+const container=document.getElementById("cases");
+container.innerHTML="";
+data.forEach(c=>{
+const card=document.createElement("div");
+card.className="case";
+card.innerHTML=`
+<h3>Cassa ${c.numero}</h3>
+<label>Titolo</label>
+<input id="title-${c.id}" value="${safe(c.titolo)}">
+<label>Descrizione</label>
+<textarea id="desc-${c.id}">${safe(c.descrizione)}</textarea>
+<div class="grid">
+<div>
+<label>Prezzo prodotto (€)</label>
+<input type="number" min="0" step="0.01" id="price-${c.id}" value="${c.prezzo_prodotto}">
+</div>
+<div>
+<label>Spedizione (€)</label>
+<input type="number" min="0" step="0.01" id="shipping-${c.id}" value="${c.prezzo_spedizione}">
+</div>
+</div>
+<div class="total" id="total-${c.id}"></div>
+<label>Stato</label>
+<select id="status-${c.id}">
+<option value="disponibile" ${c.stato==="disponibile"?"selected":""}>Disponibile</option>
+<option value="riservata" ${c.stato==="riservata"?"selected":""}>Riservata</option>
+<option value="venduta" ${c.stato==="venduta"?"selected":""}>Venduta</option>
+</select>
+<label>Fotografia</label>
+<img class="photo" id="photo-${c.id}" src="${safe(c.foto_url||"")}" style="${c.foto_url?"":"display:none"}">
+<input type="file" id="file-${c.id}" accept="image/*">
+<button onclick="uploadPhoto(${c.id},${c.numero})">Carica foto</button>
+<button onclick="saveCase(${c.id})">Salva modifiche</button>
+`;
+container.appendChild(card);
+const updateTotal=()=>{
+const p=Number(document.getElementById("price-"+c.id).value)||0;
+const s=Number(document.getElementById("shipping-"+c.id).value)||0;
+document.getElementById("total-"+c.id).textContent="Totale: € "+(p+s).toFixed(2);
+};
+document.getElementById("price-"+c.id).addEventListener("input",updateTotal);
+document.getElementById("shipping-"+c.id).addEventListener("input",updateTotal);
+updateTotal();
+});
+showMessage("Casse caricate: "+data.length);
+}
+
+async function saveCase(id){
+const prezzo=Number(document.getElementById("price-"+id).value);
+const spedizione=Number(document.getElementById("shipping-"+id).value);
+if(!Number.isFinite(prezzo)||!Number.isFinite(spedizione)||prezzo<0||spedizione<0){
+showMessage("Inserisci prezzi validi.");
+return;
+}
+const changes={
+titolo:document.getElementById("title-"+id).value,
+descrizione:document.getElementById("desc-"+id).value,
+prezzo_prodotto:prezzo,
+prezzo_spedizione:spedizione,
+stato:document.getElementById("status-"+id).value,
+updated_at:new Date().toISOString()
+};
+const {error}=await db.from("casse").update(changes).eq("id",id);
+showMessage(error?"Errore salvataggio: "+error.message:"Modifiche salvate correttamente!");
+}
+
+async function uploadPhoto(id,numero){
+const input=document.getElementById("file-"+id);
+const file=input.files[0];
+if(!file){showMessage("Seleziona prima una fotografia.");return;}
+if(!file.type.startsWith("image/")){showMessage("Seleziona un'immagine.");return;}
+if(file.size>5*1024*1024){showMessage("La foto deve essere inferiore a 5 MB.");return;}
+const extension=(file.name.split(".").pop()||"jpg").toLowerCase();
+const path="cassa-"+numero+"-"+Date.now()+"."+extension;
+showMessage("Caricamento fotografia...");
+const {error:uploadError}=await db.storage.from("casse-foto").upload(path,file,{upsert:false});
+if(uploadError){showMessage("Errore foto: "+uploadError.message);return;}
+const {data}=db.storage.from("casse-foto").getPublicUrl(path);
+const url=data.publicUrl;
+const {error:updateError}=await db.from("casse").update({
+foto_url:url,updated_at:new Date().toISOString()
+}).eq("id",id);
+if(updateError){showMessage("Foto caricata, ma URL non salvato: "+updateError.message);return;}
+const img=document.getElementById("photo-"+id);
+img.src=url;
+img.style.display="block";
+showMessage("Fotografia caricata e salvata!");
+}
+
+db.auth.onAuthStateChange((event,session)=>{
+if(event==="SIGNED_OUT"){
+document.getElementById("app").style.display="none";
+document.getElementById("login").style.display="block";
+}
+});
+checkSession();
+</script>
+</body>
+</html>
