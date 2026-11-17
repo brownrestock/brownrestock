@@ -293,5 +293,32 @@ if (event.key === "Escape") closeModal();
 });
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const SUPABASE_URL = "https://szxojmygsqxjqeyqjgre.supabase.co";
+const SUPABASE_KEY = "LA_TUA_CHIAVE_PUBLISHABLE";
+
+const supabaseClient = window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+async function caricaCasse() {
+const { data, error } = await supabaseClient
+.from("casse")
+.select("titolo, prezzo, foto, stato")
+.eq("stato", "Disponibile");
+
+if (error) {
+console.error("Errore Supabase:", error);
+return;
+}
+
+console.log("Casse disponibili:", data);
+}
+
+caricaCasse();
+</script>
 </body>
 </html>
