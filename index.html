@@ -393,18 +393,24 @@ Gesamtpreis: ${formatPrice(prices.total)}
 `;
 }
 
-function isUnavailable(item) {
+function getStatusLabel(item) {
 const status = String(item?.stato || "")
 .toLowerCase()
 .trim();
 
-return (
-status.includes("non disponibile") ||
-status.includes("nicht verfügbar") ||
-status.includes("nicht verfugbar") ||
-status.includes("ausverkauft") ||
-status === "unavailable"
-);
+if (status === "disponibile") {
+return "Jetzt kaufen";
+}
+
+if (status === "riservata") {
+return "Reserviert";
+}
+
+if (status === "venduta") {
+return "Ausverkauft";
+}
+
+return "Status auf Anfrage";
 }
 
 async function getPhotoUrl(value) {
@@ -454,10 +460,7 @@ button.className = "case";
 button.type = "button";
 
 const title = item?.titolo || "KASSE " + i;
-
-const status = isUnavailable(item)
-? "Nicht verfügbar"
-: "Angebot ansehen";
+const status = getStatusLabel(item);
 
 button.innerHTML = `
 <span class="number">${i}</span>
