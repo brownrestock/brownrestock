@@ -87,7 +87,7 @@ border-radius: 10px;
 padding: 24px 12px;
 color: white;
 cursor: pointer;
-min-height: 140px;
+min-height: 115px;
 transition: .2s;
 }
 
@@ -118,13 +118,170 @@ color: #aaa;
 font-size: 11px;
 }
 
-.case .card-price {
-display: block;
+.modal {
+display: none;
+position: fixed;
+inset: 0;
+z-index: 10;
+background: rgba(0,0,0,.88);
+padding: 20px;
+overflow-y: auto;
+}
+
+.modal.active {
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.modal-content {
+width: 100%;
+max-width: 500px;
+background: #111;
+border: 1px solid #c49b4c;
+border-radius: 12px;
+padding: 25px;
+position: relative;
+}
+
+.close {
+position: absolute;
+right: 15px;
+top: 10px;
+background: none;
+border: none;
+color: #d6ad59;
+font-size: 28px;
+cursor: pointer;
+}
+
+.modal h2 {
+color: #d6ad59;
 margin-top: 10px;
+}
+
+.product-image {
+width: 100%;
+min-height: 180px;
+max-height: 350px;
+background: #080808;
+border: 1px solid #333;
+border-radius: 8px;
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
+color: #888;
+margin: 20px 0;
+}
+
+.product-image img {
+width: 100%;
+max-height: 350px;
+object-fit: contain;
+}
+
+.details {
+color: #ccc;
+line-height: 1.6;
+white-space: pre-wrap;
+}
+
+.price {
 color: #e2b95e;
-font-size: 17px;
+font-size: 21px;
 font-weight: bold;
-<div class="price" id="price">Preis auf Anfrage</div>
+margin: 20px 0;
+}
+
+.contact {
+display: block;
+background: #c49b4c;
+color: #080808;
+padding: 14px;
+text-align: center;
+text-decoration: none;
+border-radius: 6px;
+font-weight: bold;
+margin-top: 20px;
+}
+
+.loading {
+text-align: center;
+color: #d6ad59;
+padding: 25px;
+}
+
+.error {
+color: #e0a0a0;
+text-align: center;
+padding: 15px;
+}
+
+footer {
+text-align: center;
+border-top: 1px solid #8f6c2d;
+margin-top: 45px;
+padding: 30px 15px;
+color: #999;
+font-size: 12px;
+line-height: 2;
+}
+
+footer a { color: #d6ad59; }
+
+@media(max-width: 450px) {
+.cases { grid-template-columns: repeat(2, 1fr); }
+header h1 { font-size: 23px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<img class="logo" src="logo-brownrestock.png" alt="BrownReStock">
+<h1>BrownReStock</h1>
+<p>SMART STOCK. SECOND LIFE.</p>
+</header>
+
+<nav>
+<a href="#cases">KASSEN</a>
+<a href="#contact">KONTAKT</a>
+</nav>
+
+<main>
+<section class="intro">
+<h2>UNSERE ANGEBOTE</h2>
+<p>Retouren · Restposten · Elektronik</p>
+<p>Entdecke unsere aktuellen Angebote.</p>
+</section>
+
+<div id="cases" class="cases">
+<div class="loading">Angebote werden geladen...</div>
+</div>
+</main>
+
+<div class="modal" id="modal"
+role="dialog" aria-modal="true"
+aria-labelledby="modalTitle"
+onclick="closeOutside(event)">
+
+<div class="modal-content">
+<button class="close" onclick="closeModal()"
+aria-label="Schließen">&times;</button>
+
+<h2 id="modalTitle">KASSE 1</h2>
+
+<div class="product-image" id="productImage">
+Produktfoto folgt
+</div>
+
+<p class="details" id="description">
+Produktdetails und Informationen werden hier angezeigt.
+</p>
+
+<div class="price" id="price">Preis folgt</div>
 
 <a class="contact" id="contactLink"
 href="mailto:info@brownrestock.de">
@@ -151,48 +308,6 @@ SUPABASE_KEY
 
 const BUCKET = "casse-foto";
 let casse = [];
-
-function escapeHTML(value) {
-return String(value).replace(/[&<>"']/g, char => ({
-"&": "&amp;",
-"<": "&lt;",
-">": "&gt;",
-'"': "&quot;",
-"'": "&#39;"
-})[char]);
-}
-
-// Gestisce prezzi sia numerici che con virgola decimale
-function formatPrice(value) {
-if (value === null || value === undefined || value === "") {
-return "Prezzo su richiesta";
-}
-
-let normalized = String(value).trim();
-
-normalized = normalized.replace(/[€\s]/g, "");
-
-if (normalized.includes(",")) {
-normalized = normalized.replace(/\./g, "").replace(",", ".");
-}
-
-const number = Number(normalized);
-
-if (!Number.isFinite(number)) {
-return "Prezzo su richiesta";
-}
-
-return number.toLocaleString("de-DE", {
-minimumFractionDigits: 2,
-maximumFractionDigits: 2
-}) + " €";
-}
-
-function isAvailable(item) {
-const status = String(item?.stato ?? "").trim().toLowerCase();
-
-return !["non disponibile", "non_disponibile", "esaurito", "venduto", "false", "0"].includes(status);
-}
 
 async function getPhotoUrl(value) {
 if (!value) return "";
@@ -222,15 +337,13 @@ const { data, error } = await db
 .order("id", { ascending: true });
 
 if (error) {
-console.error("Supabase Fehler:", error);
+console.error(error);
 container.innerHTML =
 '<p class="error">Angebote konnten nicht geladen werden.</p>';
 return;
 }
 
 casse = data || [];
-
-console.log("BrownReStock Angebote:", casse);
 
 container.innerHTML = "";
 
@@ -244,17 +357,13 @@ button.className = "case";
 button.type = "button";
 
 const title = item?.titolo || "KASSE " + i;
-const available = item ? isAvailable(item) : false;
+const available = item?.stato_disponibile;
 
 button.innerHTML = `
 <span class="number">${i}</span>
 <span class="label">${escapeHTML(title)}</span>
-${item && item.prezzo != null
-? `<span class="card-price">${escapeHTML(formatPrice(item.prezzo))}</span>`
-: ""}
 <span class="status">${
-!item ? "Demnächst verfügbar" :
-available ? "Angebot ansehen" : "Nicht verfügbar"
+available === false ? "Nicht verfügbar" : "Angebot ansehen"
 }</span>
 `;
 
@@ -263,23 +372,29 @@ container.appendChild(button);
 }
 }
 
+function escapeHTML(value) {
+return String(value).replace(/[&<>"']/g, char => ({
+"&": "&amp;",
+"<": "&lt;",
+">": "&gt;",
+'"': "&quot;",
+"'": "&#39;"
+})[char]);
+}
+
 async function openCase(number) {
 const item = casse.find(c =>
 Number(c.numero ?? c.id) === number
 );
 
-if (!item) {
-return;
-}
-
 document.getElementById("modalTitle").textContent =
-item.titolo || "KASSE " + number;
+item?.titolo || "KASSE " + number;
 
 document.getElementById("description").textContent =
-item.descrizione || "Weitere Informationen auf Anfrage.";
+item?.descrizione || "Weitere Informationen auf Anfrage.";
 
 document.getElementById("price").textContent =
-formatPrice(item.prezzo);
+item?.prezzo != null ? Number(item.prezzo).toFixed(2) + " €" : "Preis auf Anfrage";
 
 const imageBox = document.getElementById("productImage");
 imageBox.textContent = "Foto wird geladen...";
@@ -290,17 +405,15 @@ encodeURIComponent("Anfrage zu Kasse " + number);
 
 document.getElementById("modal").classList.add("active");
 
-const photo = await getPhotoUrl(item.foto);
+const photo = await getPhotoUrl(item?.foto);
 
 if (photo) {
 const img = document.createElement("img");
 img.src = photo;
 img.alt = "Produktfoto Kasse " + number;
-
 img.onerror = () => {
 imageBox.textContent = "Produktfoto nicht verfügbar";
 };
-
 imageBox.replaceChildren(img);
 } else {
 imageBox.textContent = "Produktfoto folgt";
@@ -312,9 +425,7 @@ document.getElementById("modal").classList.remove("active");
 }
 
 function closeOutside(event) {
-if (event.target.id === "modal") {
-closeModal();
-}
+if (event.target.id === "modal") closeModal();
 }
 
 document.addEventListener("keydown", event => {
