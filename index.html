@@ -87,8 +87,9 @@ border-radius: 10px;
 padding: 24px 12px;
 color: white;
 cursor: pointer;
-min-height: 115px;
+min-height: 145px;
 transition: .2s;
+text-align: center;
 }
 
 .case:hover {
@@ -118,196 +119,104 @@ color: #aaa;
 font-size: 11px;
 }
 
-.modal {
-display: none;
-position: fixed;
-inset: 0;
-z-index: 10;
-background: rgba(0,0,0,.88);
-padding: 20px;
-overflow-y: auto;
-}
-
-.modal.active {
-display: flex;
-align-items: center;
-justify-content: center;
-}
-
-.modal-content {
-width: 100%;
-max-width: 500px;
-background: #111;
-border: 1px solid #c49b4c;
-border-radius: 12px;
-padding: 25px;
-position: relative;
-}
-
-.close {
-position: absolute;
-right: 15px;
-top: 10px;
-background: none;
-border: none;
+.case-price {
+margin-top: 13px;
+padding-top: 10px;
+border-top: 1px solid #383024;
 color: #d6ad59;
-font-size: 28px;
-cursor: pointer;
-}
-
-.modal h2 {
-color: #d6ad59;
-margin-top: 10px;
-}
-
-.product-image {
-width: 100%;
-min-height: 180px;
-max-height: 350px;
-background: #080808;
-border: 1px solid #333;
-border-radius: 8px;
-display: flex;
-align-items: center;
-justify-content: center;
-overflow: hidden;
-color: #888;
-margin: 20px 0;
-}
-
-.product-image img {
-width: 100%;
-max-height: 350px;
-object-fit: contain;
-}
-
-.details {
-color: #ccc;
-line-height: 1.6;
-white-space: pre-wrap;
-}
-
-.price {
-color: #e2b95e;
-font-size: 21px;
-font-weight: bold;
-margin: 20px 0;
-}
-
-.contact {
-display: block;
-background: #c49b4c;
-color: #080808;
-padding: 14px;
-text-align: center;
-text-decoration: none;
-border-radius: 6px;
-font-weight: bold;
-margin-top: 20px;
-}
-
-.loading {
-text-align: center;
-color: #d6ad59;
-padding: 25px;
-}
-
-.error {
-color: #e0a0a0;
-text-align: center;
-padding: 15px;
-}
-
-footer {
-text-align: center;
-border-top: 1px solid #8f6c2d;
-margin-top: 45px;
-padding: 30px 15px;
-color: #999;
 font-size: 12px;
+line-height: 1.7;
+}
+
+.case-total {
+font-weight: bold;
+font-size: 14px;
+color: #d6ad59;
+font-size: 15px;
+font-weight: bold;
 line-height: 2;
+margin: 20px 0;
+padding: 15px;
+background: #19150e;
+border: 1px solid #554322;
+border-radius: 8px;
 }
 
-footer a { color: #d6ad59; }
-
-@media(max-width: 450px) {
-.cases { grid-template-columns: repeat(2, 1fr); }
-header h1 { font-size: 23px; }
+.price-total {
+display: block;
+color: #f0c66c;
+font-size: 21px;
+border-top: 1px solid #554322;
+margin-top: 8px;
+padding-top: 10px;
+function formatPrice(value) {
+return Number(value).toLocaleString("de-DE", {
+minimumFractionDigits: 2,
+maximumFractionDigits: 2
+}) + " €";
 }
-</style>
-</head>
 
-<body>
+function getPrices(item) {
+const product = item?.prezzo_prodotto;
+const shipping = item?.prezzo_spedizione;
 
-<header>
-<img class="logo" src="logo-brownrestock.png" alt="BrownReStock">
-<h1>BrownReStock</h1>
-<p>SMART STOCK. SECOND LIFE.</p>
-</header>
+if (
+product === null || product === undefined || product === "" ||
+shipping === null || shipping === undefined || shipping === ""
+) {
+return null;
+}
 
-<nav>
-<a href="#cases">KASSEN</a>
-<a href="#contact">KONTAKT</a>
-</nav>
+const productPrice = Number(product);
+const shippingPrice = Number(shipping);
 
-<main>
-<section class="intro">
-<h2>UNSERE ANGEBOTE</h2>
-<p>Retouren · Restposten · Elektronik</p>
-<p>Entdecke unsere aktuellen Angebote.</p>
-</section>
+if (
+!Number.isFinite(productPrice) ||
+!Number.isFinite(shippingPrice) ||
+productPrice < 0 ||
+shippingPrice < 0
+) {
+return null;
+}
 
-<div id="cases" class="cases">
-<div class="loading">Angebote werden geladen...</div>
+return {
+product: productPrice,
+shipping: shippingPrice,
+total: productPrice + shippingPrice
+};
+}
+
+function priceHTML(item) {
+const prices = getPrices(item);
+
+if (!prices) {
+return "Preis auf Anfrage";
+}
+
+return `
+<div>Warenpreis: ${formatPrice(prices.product)}</div>
+<div>Versandkosten: ${formatPrice(prices.shipping)}</div>
+<div class="case-total">
+Gesamtpreis: ${formatPrice(prices.total)}
 </div>
-</main>
+`;
+}
 
-<div class="modal" id="modal"
-role="dialog" aria-modal="true"
-aria-labelledby="modalTitle"
-onclick="closeOutside(event)">
+function modalPriceHTML(item) {
+const prices = getPrices(item);
 
-<div class="modal-content">
-<button class="close" onclick="closeModal()"
-aria-label="Schließen">&times;</button>
+if (!prices) {
+return "Preis auf Anfrage";
+}
 
-<h2 id="modalTitle">KASSE 1</h2>
-
-<div class="product-image" id="productImage">
-Produktfoto folgt
-</div>
-
-<p class="details" id="description">
-Produktdetails und Informationen werden hier angezeigt.
-</p>
-
-<div class="price" id="price">Preis folgt</div>
-
-<a class="contact" id="contactLink"
-href="mailto:info@brownrestock.de">
-ANFRAGE SENDEN
-</a>
-</div>
-</div>
-
-<footer id="contact">
-<p>SMART STOCK. SECOND LIFE.</p>
-<p>📦 Retouren · Restposten · Elektronik</p>
-<p><a href="mailto:info@brownrestock.de">info@brownrestock.de</a></p>
-<p>© 2026 BrownReStock</p>
-</footer>
-
-<script>
-const SUPABASE_URL = "https://szxojmygsqxjqeyqjgre.supabase.co";
-const SUPABASE_KEY = "sb_publishable_ytwy5iHgA4_LQkwD5mSTWA_-lS8dtU0";
-
-const db = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
-);
-
-const BUCKET = "casse-foto";
-let casse = [];
+return `
+<div>Warenpreis: ${formatPrice(prices.product)}</div>
+<div>Versandkosten: ${formatPrice(prices.shipping)}</div>
+<span class="price-total">
+Gesamtpreis: ${formatPrice(prices.total)}
+</span>
+`;
+}
 
 async function getPhotoUrl(value) {
 if (!value) return "";
@@ -325,7 +234,26 @@ console.error("Foto nicht geladen:", error);
 return "";
 }
 
-return data.signedUrl;
+return data?.signedUrl || "";
+}
+
+function isUnavailable(item) {
+const status = item?.stato;
+
+if (status === false) return true;
+
+const value = String(status ?? "").toLowerCase().trim();
+
+return [
+"false",
+"nicht verfügbar",
+"nicht verfugbar",
+"nicht_verfügbar",
+"nicht_verfugbar",
+"ausverkauft",
+"sold",
+"unavailable"
+].includes(value);
 }
 
 async function loadCases() {
@@ -344,7 +272,6 @@ return;
 }
 
 casse = data || [];
-
 container.innerHTML = "";
 
 for (let i = 1; i <= 10; i++) {
@@ -357,17 +284,22 @@ button.className = "case";
 button.type = "button";
 
 const title = item?.titolo || "KASSE " + i;
-const available = item?.stato_disponibile;
+
+const status = isUnavailable(item)
+? "Nicht verfügbar"
+: "Angebot ansehen";
 
 button.innerHTML = `
 <span class="number">${i}</span>
 <span class="label">${escapeHTML(title)}</span>
-<span class="status">${
-available === false ? "Nicht verfügbar" : "Angebot ansehen"
-}</span>
+<span class="status">${status}</span>
+<div class="case-price">
+${priceHTML(item)}
+</div>
 `;
 
 button.addEventListener("click", () => openCase(i));
+
 container.appendChild(button);
 }
 }
@@ -393,8 +325,8 @@ item?.titolo || "KASSE " + number;
 document.getElementById("description").textContent =
 item?.descrizione || "Weitere Informationen auf Anfrage.";
 
-document.getElementById("price").textContent =
-item?.prezzo != null ? Number(item.prezzo).toFixed(2) + " €" : "Preis auf Anfrage";
+document.getElementById("price").innerHTML =
+modalPriceHTML(item);
 
 const imageBox = document.getElementById("productImage");
 imageBox.textContent = "Foto wird geladen...";
@@ -405,15 +337,21 @@ encodeURIComponent("Anfrage zu Kasse " + number);
 
 document.getElementById("modal").classList.add("active");
 
-const photo = await getPhotoUrl(item?.foto);
+const photo = await getPhotoUrl(item?.foto_url);
+
+if (!document.getElementById("modal").classList.contains("active")) {
+return;
+}
 
 if (photo) {
 const img = document.createElement("img");
 img.src = photo;
 img.alt = "Produktfoto Kasse " + number;
+
 img.onerror = () => {
 imageBox.textContent = "Produktfoto nicht verfügbar";
 };
+
 imageBox.replaceChildren(img);
 } else {
 imageBox.textContent = "Produktfoto folgt";
@@ -425,7 +363,9 @@ document.getElementById("modal").classList.remove("active");
 }
 
 function closeOutside(event) {
-if (event.target.id === "modal") closeModal();
+if (event.target.id === "modal") {
+closeModal();
+}
 }
 
 document.addEventListener("keydown", event => {
