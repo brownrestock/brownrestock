@@ -5,185 +5,234 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BrownReStock | Smart Stock. Second Life.</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 * { box-sizing: border-box; }
 
 body {
 margin: 0;
 background: #080808;
-color: white;
+color: #fff;
 font-family: Arial, sans-serif;
 }
 
 header {
 text-align: center;
-padding: 30px 15px;
+padding: 35px 15px 25px;
+border-bottom: 1px solid #a98235;
 }
 
 .logo {
-width: 100%;
-max-width: 650px;
+width: 210px;
+max-width: 80%;
 height: auto;
+object-fit: contain;
 }
 
-h1, .section-title {
+header h1 {
+color: #d6ad59;
+font-size: 28px;
+letter-spacing: 3px;
+margin: 15px 0 8px;
+}
+
+header p {
+color: #aaa;
+letter-spacing: 2px;
+font-size: 12px;
+}
+
+nav {
+padding: 16px;
 text-align: center;
-color: #d9b45b;
+border-bottom: 1px solid #292929;
+}
+
+nav a {
+color: #d6ad59;
+text-decoration: none;
+margin: 0 12px;
+font-size: 13px;
+}
+
+main {
+max-width: 1100px;
+margin: auto;
+padding: 35px 18px;
+}
+
+.intro {
+text-align: center;
+margin-bottom: 35px;
+}
+
+.intro h2 {
+color: #d6ad59;
 letter-spacing: 2px;
 }
 
-h1 { margin-top: 25px; }
-
-.subtitle, .section-description {
-text-align: center;
-color: #aaa;
-padding: 0 15px;
-}
-
-.categories {
-display: flex;
-justify-content: center;
-flex-wrap: wrap;
-gap: 15px;
-padding: 20px 15px 45px;
-}
-
-.category {
-border: 1px solid #b89448;
-border-radius: 10px;
-padding: 20px;
-min-width: 150px;
-text-align: center;
-color: #e8c36c;
-background: #111;
-}
-
-.section-title { margin-top: 15px; }
+.intro p { color: #aaa; }
 
 .cases {
-max-width: 1100px;
-margin: 30px auto 60px;
-padding: 0 20px;
 display: grid;
-grid-template-columns: repeat(5, 1fr);
-gap: 18px;
+grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+gap: 16px;
 }
 
 .case {
+background: #111;
+border: 1px solid #8f6c2d;
+border-radius: 10px;
+padding: 24px 12px;
+color: white;
 cursor: pointer;
-border: 1px solid #b89448;
-border-radius: 12px;
-background: linear-gradient(145deg, #292929, #090909);
-color: #e7c36b;
-padding: 30px 10px;
-text-align: center;
+min-height: 115px;
 transition: .2s;
 }
 
 .case:hover {
-transform: translateY(-5px);
-border-color: #f4d88c;
-box-shadow: 0 0 20px #b8944844;
+background: #211b10;
+border-color: #e0b85f;
+transform: translateY(-3px);
 }
 
-.number {
+.case .number {
 display: block;
-font-size: 36px;
+font-size: 27px;
+color: #d6ad59;
 font-weight: bold;
-margin-bottom: 8px;
 }
 
-.label {
-color: #ddd;
-font-size: 13px;
-letter-spacing: 1px;
+.case .label {
+display: block;
+margin-top: 8px;
+font-size: 12px;
+letter-spacing: 2px;
+}
+
+.case .status {
+display: block;
+margin-top: 10px;
+color: #aaa;
+font-size: 11px;
 }
 
 .modal {
 display: none;
 position: fixed;
-z-index: 10;
 inset: 0;
-background: rgba(0,0,0,.9);
-align-items: center;
-justify-content: center;
-padding: 18px;
+z-index: 10;
+background: rgba(0,0,0,.88);
+padding: 20px;
+overflow-y: auto;
 }
 
-.modal.open { display: flex; }
+.modal.active {
+display: flex;
+align-items: center;
+justify-content: center;
+}
 
 .modal-content {
 width: 100%;
-max-width: 430px;
-background: #151515;
-border: 1px solid #c5a253;
-border-radius: 15px;
-padding: 28px 22px;
-text-align: center;
+max-width: 500px;
+background: #111;
+border: 1px solid #c49b4c;
+border-radius: 12px;
+padding: 25px;
 position: relative;
 }
 
 .close {
 position: absolute;
-right: 14px;
-top: 8px;
+right: 15px;
+top: 10px;
 background: none;
 border: none;
-color: white;
-font-size: 30px;
+color: #d6ad59;
+font-size: 28px;
 cursor: pointer;
 }
 
-.modal-content h2 { color: #e5c16a; }
+.modal h2 {
+color: #d6ad59;
+margin-top: 10px;
+}
 
 .product-image {
-height: 150px;
-border: 1px dashed #9c8045;
-border-radius: 10px;
+width: 100%;
+min-height: 180px;
+max-height: 350px;
+background: #080808;
+border: 1px solid #333;
+border-radius: 8px;
 display: flex;
 align-items: center;
 justify-content: center;
-color: #aaa;
+overflow: hidden;
+color: #888;
 margin: 20px 0;
-background: #0b0b0b;
 }
 
-.details { color: #ccc; line-height: 1.6; }
+.product-image img {
+width: 100%;
+max-height: 350px;
+object-fit: contain;
+}
+
+.details {
+color: #ccc;
+line-height: 1.6;
+white-space: pre-wrap;
+}
 
 .price {
-color: #e5c16a;
-font-size: 23px;
+color: #e2b95e;
+font-size: 21px;
 font-weight: bold;
 margin: 20px 0;
 }
 
 .contact {
-display: inline-block;
-background: linear-gradient(135deg, #d5b15e, #94702d);
-color: #111;
+display: block;
+background: #c49b4c;
+color: #080808;
+padding: 14px;
+text-align: center;
 text-decoration: none;
-padding: 13px 22px;
-border-radius: 7px;
+border-radius: 6px;
 font-weight: bold;
+margin-top: 20px;
+}
+
+.loading {
+text-align: center;
+color: #d6ad59;
+padding: 25px;
+}
+
+.error {
+color: #e0a0a0;
+text-align: center;
+padding: 15px;
 }
 
 footer {
 text-align: center;
-color: #888;
+border-top: 1px solid #8f6c2d;
+margin-top: 45px;
 padding: 30px 15px;
-border-top: 1px solid #292929;
-font-size: 14px;
+color: #999;
+font-size: 12px;
+line-height: 2;
 }
 
-footer a { color: #d9b45b; }
+footer a { color: #d6ad59; }
 
-@media (max-width: 700px) {
+@media(max-width: 450px) {
 .cases { grid-template-columns: repeat(2, 1fr); }
-.case { padding: 25px 8px; }
-}
-
-@media (min-width: 701px) and (max-width: 950px) {
-.cases { grid-template-columns: repeat(3, 1fr); }
+header h1 { font-size: 23px; }
 }
 </style>
 </head>
@@ -191,28 +240,26 @@ footer a { color: #d9b45b; }
 <body>
 
 <header>
-<img class="logo" src="logo-brownrestock.png"
-alt="BrownReStock – Smart Stock. Second Life.">
+<img class="logo" src="logo-brownrestock.png" alt="BrownReStock">
+<h1>BrownReStock</h1>
+<p>SMART STOCK. SECOND LIFE.</p>
 </header>
 
+<nav>
+<a href="#cases">KASSEN</a>
+<a href="#contact">KONTAKT</a>
+</nav>
+
 <main>
+<section class="intro">
+<h2>UNSERE ANGEBOTE</h2>
+<p>Retouren · Restposten · Elektronik</p>
+<p>Entdecke unsere aktuellen Angebote.</p>
+</section>
 
-<h1>WILLKOMMEN BEI BROWNRESTOCK</h1>
-<p class="subtitle">Smart Stock. Second Life.</p>
-
-<div class="categories">
-<div class="category">📦<br>Retouren</div>
-<div class="category">🏷️<br>Restposten</div>
-<div class="category">💻<br>Elektronik</div>
+<div id="cases" class="cases">
+<div class="loading">Angebote werden geladen...</div>
 </div>
-
-<h2 class="section-title">UNSERE LIVE-KASSEN</h2>
-<p class="section-description">
-Wähle eine Kasse und entdecke das aktuelle Angebot.
-</p>
-
-<div class="cases" id="cases"></div>
-
 </main>
 
 <div class="modal" id="modal"
@@ -226,7 +273,9 @@ aria-label="Schließen">&times;</button>
 
 <h2 id="modalTitle">KASSE 1</h2>
 
-<div class="product-image">Produktfoto folgt</div>
+<div class="product-image" id="productImage">
+Produktfoto folgt
+</div>
 
 <p class="details" id="description">
 Produktdetails und Informationen werden hier angezeigt.
@@ -241,7 +290,7 @@ ANFRAGE SENDEN
 </div>
 </div>
 
-<footer>
+<footer id="contact">
 <p>SMART STOCK. SECOND LIFE.</p>
 <p>📦 Retouren · Restposten · Elektronik</p>
 <p><a href="mailto:info@brownrestock.de">info@brownrestock.de</a></p>
@@ -249,76 +298,142 @@ ANFRAGE SENDEN
 </footer>
 
 <script>
-const cases = document.getElementById("cases");
+const SUPABASE_URL = "https://szxojmygsqxjqeyqjgre.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ytwy5iHgA4_LQkwD5mSTWA_-lS8dtU0";
+
+const db = window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+const BUCKET = "casse-foto";
+let casse = [];
+
+async function getPhotoUrl(value) {
+if (!value) return "";
+
+if (/^https?:\/\//i.test(value)) {
+return value;
+}
+
+const { data, error } = await db.storage
+.from(BUCKET)
+.createSignedUrl(value, 3600);
+
+if (error) {
+console.error("Foto nicht geladen:", error);
+return "";
+}
+
+return data.signedUrl;
+}
+
+async function loadCases() {
+const container = document.getElementById("cases");
+
+const { data, error } = await db
+.from("casse")
+.select("*")
+.order("id", { ascending: true });
+
+if (error) {
+console.error(error);
+container.innerHTML =
+'<p class="error">Angebote konnten nicht geladen werden.</p>';
+return;
+}
+
+casse = data || [];
+
+container.innerHTML = "";
 
 for (let i = 1; i <= 10; i++) {
+const item = casse.find(c =>
+Number(c.numero ?? c.id) === i
+);
+
 const button = document.createElement("button");
 button.className = "case";
 button.type = "button";
-button.innerHTML =
-'<span class="number">' + i + '</span>' +
-'<span class="label">KASSE ' + i + '</span>';
+
+const title = item?.titolo || "KASSE " + i;
+const available = item?.stato_disponibile;
+
+button.innerHTML = `
+<span class="number">${i}</span>
+<span class="label">${escapeHTML(title)}</span>
+<span class="status">${
+available === false ? "Nicht verfügbar" : "Angebot ansehen"
+}</span>
+`;
 
 button.addEventListener("click", () => openCase(i));
-cases.appendChild(button);
+container.appendChild(button);
+}
 }
 
-function openCase(number) {
+function escapeHTML(value) {
+return String(value).replace(/[&<>"']/g, char => ({
+"&": "&amp;",
+"<": "&lt;",
+">": "&gt;",
+'"': "&quot;",
+"'": "&#39;"
+})[char]);
+}
+
+async function openCase(number) {
+const item = casse.find(c =>
+Number(c.numero ?? c.id) === number
+);
+
 document.getElementById("modalTitle").textContent =
-"KASSE " + number;
+item?.titolo || "KASSE " + number;
 
 document.getElementById("description").textContent =
-"Das Angebot für diese Kasse wird in Kürze bekannt gegeben.";
+item?.descrizione || "Weitere Informationen auf Anfrage.";
 
 document.getElementById("price").textContent =
-"Preis folgt";
+item?.prezzo != null ? Number(item.prezzo).toFixed(2) + " €" : "Preis auf Anfrage";
+
+const imageBox = document.getElementById("productImage");
+imageBox.textContent = "Foto wird geladen...";
 
 document.getElementById("contactLink").href =
 "mailto:info@brownrestock.de?subject=" +
-encodeURIComponent("Anfrage für Kasse " + number);
+encodeURIComponent("Anfrage zu Kasse " + number);
 
-document.getElementById("modal").classList.add("open");
+document.getElementById("modal").classList.add("active");
+
+const photo = await getPhotoUrl(item?.foto);
+
+if (photo) {
+const img = document.createElement("img");
+img.src = photo;
+img.alt = "Produktfoto Kasse " + number;
+img.onerror = () => {
+imageBox.textContent = "Produktfoto nicht verfügbar";
+};
+imageBox.replaceChildren(img);
+} else {
+imageBox.textContent = "Produktfoto folgt";
+}
 }
 
 function closeModal() {
-document.getElementById("modal").classList.remove("open");
+document.getElementById("modal").classList.remove("active");
 }
 
 function closeOutside(event) {
 if (event.target.id === "modal") closeModal();
 }
 
-document.addEventListener("keydown", function(event) {
+document.addEventListener("keydown", event => {
 if (event.key === "Escape") closeModal();
 });
+
+loadCases();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-const SUPABASE_URL = "https://szxojmygsqxjqeyqjgre.supabase.co";
-const SUPABASE_KEY = "LA_TUA_CHIAVE_PUBLISHABLE";
-
-const supabaseClient = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
-);
-
-async function caricaCasse() {
-const { data, error } = await supabaseClient
-.from("casse")
-.select("titolo, prezzo, foto, stato")
-.eq("stato", "Disponibile");
-
-if (error) {
-console.error("Errore Supabase:", error);
-return;
-}
-
-console.log("Casse disponibili:", data);
-}
-
-caricaCasse();
-</script>
 </body>
 </html>
